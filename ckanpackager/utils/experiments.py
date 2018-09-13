@@ -63,14 +63,14 @@ class Things:
             password (str): server auth password
             use_tls (bool): use TLS mode
         """
-        msg = MIMEMultipart()
+        msg = MIMEMultipart('alternative')
         msg['From'] = send_from
         msg['To'] = COMMASPACE.join(send_to)
         msg['Date'] = formatdate(localtime=True)
         msg['Subject'] = subject
 
-        # msg.attach(MIMEText(message, 'plain'))
-        msg.attach(MIMEText(html, 'text/html'))
+        msg.attach(MIMEText(message, 'plain'))
+        msg.attach(MIMEText(html, 'html'))
 
         for path in files:
             part = MIMEBase('application', "octet-stream")
