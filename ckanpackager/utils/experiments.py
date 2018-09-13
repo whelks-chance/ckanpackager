@@ -14,6 +14,8 @@ from email.mime.text import MIMEText
 from ckanpackager.utils.QueueWriter import QueueWriter
 import local_settings
 
+ZIP_FILE_INCLUDE_FOLDER = 'include_in_zipfile'
+
 
 class Things:
     def __init__(self):
@@ -148,7 +150,7 @@ def create_download_zipfile(zip_file_filename, filezilla_queue_xml_filename):
         zip_file.write(os.path.join('include_in_zipfile', filename), filename)
 
     zip_file = zipfile.ZipFile(zip_file_filename, 'w', zipfile.ZIP_DEFLATED)
-    zip_file.write(filezilla_queue_xml_filename)
+    add_file(zip_file, filezilla_queue_xml_filename)
     add_file(zip_file, 'PASSWORD.txt')
     add_file(zip_file, 'LICENSE.txt')
     add_file(zip_file, 'TERMS_AND_CONDITIONS.txt')
@@ -167,7 +169,11 @@ if __name__ == '__main__':
         qw.add_file(f)
 
     filezilla_queue_xml_filename = 'FileZilla_Download_Queue.xml'
-    qw.write_queue_xml(filename=filezilla_queue_xml_filename)
+    qw.write_queue_xml(filename=os.path.join(ZIP_FILE_INCLUDE_FOLDER, filezilla_queue_xml_filename))
+
+    password_filename = os.path.join(ZIP_FILE_INCLUDE_FOLDER, 'PASSWORD.txt')
+    with open(password_filename, 'w') as f:
+        f.write(local_settings.password)
 
     zip_file_filename = "CKANFileDownload.zip"
     create_download_zipfile(zip_file_filename, filezilla_queue_xml_filename)

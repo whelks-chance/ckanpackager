@@ -32,11 +32,11 @@ class QueueWriter:
         # }
 
         self.queue_data = {
-            'Host': 'localhost',
+            'Host': local_settings.host,
             'Port': 22,
             'Protocol': 1,
             'Type': 0,
-            'User': 'ianh',
+            'User': local_settings.username,
             'Logontype': 2,
             'TimezoneOffset': 0,
             'PasvMode': 'MODE_DEFAULT',
