@@ -69,8 +69,8 @@ class Things:
         msg['Date'] = formatdate(localtime=True)
         msg['Subject'] = subject
 
-        msg.attach(MIMEText(message, 'plain'))
-        msg.attach(MIMEText(html, 'html'))
+        # msg.attach(MIMEText(message, 'plain'))
+        msg.attach(MIMEText(html, 'text/html'))
 
         for path in files:
             part = MIMEBase('application', "octet-stream")
