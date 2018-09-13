@@ -10,6 +10,10 @@ from ckanpackager.lib.resource_file import ResourceFile
 from ckanpackager.lib.statistics import statistics
 from raven import Client
 
+from ckanpackager.utils import local_settings
+from ckanpackager.utils.QueueWriter import QueueWriter
+from ckanpackager.utils.experiments import Things, ZIP_FILE_INCLUDE_FOLDER, create_download_zipfile
+
 
 class PackageTask(object):
     """Base class for DatastorePackageTask and UrlPackageTask
@@ -101,37 +105,61 @@ class PackageTask(object):
     def _run(self):
         """Run the task"""
         self.log.info("Task parameters: {}".format(str(self.request_params)))
-        # Get/create the file
-        resource = ResourceFile(
-            self.request_params,
-            self.config['STORE_DIRECTORY'],
-            self.config['TEMP_DIRECTORY'],
-            self.config['CACHE_TIME']
-        )
-        if not resource.zip_file_exists():
-            self.create_zip(resource)
-        else:
-            self.log.info("Found file in cache")
-        zip_file_name = resource.get_zip_file_name()
-        self.log.info("Got ZIP file {}. Emailing link.".format(zip_file_name))
-        # Email the link
-        place_holders = {
-            'resource_id': self.request_params['resource_id'],
-            'zip_file_name': os.path.basename(zip_file_name),
-            'ckan_host': self.host()
-        }
-        from_addr = self.config['EMAIL_FROM'].format(**place_holders)
-        msg = MIMEText(self.config['EMAIL_BODY'].format(**place_holders))
-        msg['Subject'] = self.config['EMAIL_SUBJECT'].format(**place_holders)
-        msg['From'] = from_addr
-        msg['To'] = self.request_params['email']
-        server = smtplib.SMTP(self.config['SMTP_HOST'], self.config['SMTP_PORT'])
+        # # Get/create the file
+        # resource = ResourceFile(
+        #     self.request_params,
+        #     self.config['STORE_DIRECTORY'],
+        #     self.config['TEMP_DIRECTORY'],
+        #     self.config['CACHE_TIME']
+        # )
+        # if not resource.zip_file_exists():
+        #     self.create_zip(resource)
+        # else:
+        #     self.log.info("Found file in cache")
+        # zip_file_name = resource.get_zip_file_name()
+        # self.log.info("Got ZIP file {}. Emailing link.".format(zip_file_name))
+        # # Email the link
+        # place_holders = {
+        #     'resource_id': self.request_params['resource_id'],
+        #     'zip_file_name': os.path.basename(zip_file_name),
+        #     'ckan_host': self.host()
+        # }
+        # from_addr = self.config['EMAIL_FROM'].format(**place_holders)
+        # msg = MIMEText(self.config['EMAIL_BODY'].format(**place_holders))
+        # msg['Subject'] = self.config['EMAIL_SUBJECT'].format(**place_holders)
+        # msg['From'] = from_addr
+        # msg['To'] = self.request_params['email']
+        # server = smtplib.SMTP(self.config['SMTP_HOST'], self.config['SMTP_PORT'])
+        # try:
+        #     if 'SMTP_LOGIN' in self.config:
+        #         server.login(self.config['SMTP_LOGIN'], self.config['SMTP_PASSWORD'])
+        #     server.sendmail(from_addr, self.request_params['email'], msg.as_string())
+        # finally:
+        #     server.quit()
+
+        t = Things()
+        # t.post_stuff()
+
+        qw = QueueWriter()
+        for f in local_settings.files:
+            qw.add_file(f)
+
+        filezilla_queue_xml_filename = 'FileZilla_Download_Queue.xml'
+        qw.write_queue_xml(filename=os.path.join(ZIP_FILE_INCLUDE_FOLDER, filezilla_queue_xml_filename))
+
+        password_filename = os.path.join(ZIP_FILE_INCLUDE_FOLDER, 'PASSWORD.txt')
+        with open(password_filename, 'w') as f:
+            f.write(local_settings.password)
+
+        zip_file_filename = "CKANFileDownload.zip"
+        create_download_zipfile(zip_file_filename, filezilla_queue_xml_filename)
+
+        files = [zip_file_filename]
         try:
-            if 'SMTP_LOGIN' in self.config:
-                server.login(self.config['SMTP_LOGIN'], self.config['SMTP_PASSWORD'])
-            server.sendmail(from_addr, self.request_params['email'], msg.as_string())
-        finally:
-            server.quit()
+            t.email_from_localhost(files=files)
+            self.log.info('sent')
+        except Exception as e1:
+            self.log.info(e1)
 
     def __str__(self):
         """Return a unique representation of this task"""
