@@ -149,6 +149,7 @@ def create_download_zipfile(zip_file_filename, filezilla_queue_xml_filename):
 
     zip_file = zipfile.ZipFile(zip_file_filename, 'w', zipfile.ZIP_DEFLATED)
     zip_file.write(filezilla_queue_xml_filename)
+    add_file(zip_file, 'PASSWORD.txt')
     add_file(zip_file, 'LICENSE.txt')
     add_file(zip_file, 'TERMS_AND_CONDITIONS.txt')
     add_file(zip_file, 'README_LINUX.txt')
@@ -173,7 +174,7 @@ if __name__ == '__main__':
 
     files = [zip_file_filename]
     try:
-        # t.email_from_localhost(files=files)
+        t.email_from_localhost(files=files)
         print 'sent'
     except Exception as e1:
         print(e1)

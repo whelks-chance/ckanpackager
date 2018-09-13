@@ -1,3 +1,4 @@
 local_settings.py
 FileZilla*
 *.zip
+include_in_zipfile/PASSWORD.txt
