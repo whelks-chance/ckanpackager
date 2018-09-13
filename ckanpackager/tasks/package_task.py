@@ -10,6 +10,7 @@ from ckanpackager.lib.resource_file import ResourceFile
 from ckanpackager.lib.statistics import statistics
 from raven import Client
 
+
 class PackageTask(object):
     """Base class for DatastorePackageTask and UrlPackageTask
 

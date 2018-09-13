@@ -109,3 +109,5 @@ if __name__ == '__main__':
         qw.add_file(f)
         print(os.path.getsize(f))
     qw.write_queue_xml(filename='FileZilla.xml')
+
+    open('')

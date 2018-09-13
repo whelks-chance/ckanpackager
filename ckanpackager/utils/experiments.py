@@ -1,6 +1,7 @@
 import os
 import smtplib
 import logging
+import zipfile
 from email import encoders
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
@@ -141,6 +142,21 @@ class Things:
         smtp.quit()
 
 
+def create_download_zipfile(zip_file_filename, filezilla_queue_xml_filename):
+
+    def add_file(zip_file, filename):
+        zip_file.write(os.path.join('include_in_zipfile', filename), filename)
+
+    zip_file = zipfile.ZipFile(zip_file_filename, 'w', zipfile.ZIP_DEFLATED)
+    zip_file.write(filezilla_queue_xml_filename)
+    add_file(zip_file, 'LICENSE.txt')
+    add_file(zip_file, 'TERMS_AND_CONDITIONS.txt')
+    add_file(zip_file, 'README_LINUX.txt')
+    add_file(zip_file, 'README_MACOS.txt')
+    add_file(zip_file, 'README_WINDOWS.txt')
+    zip_file.close()
+
+
 if __name__ == '__main__':
     t = Things()
     # t.post_stuff()
@@ -149,12 +165,15 @@ if __name__ == '__main__':
     for f in local_settings.files:
         qw.add_file(f)
 
-    filename = 'FileZilla2.xml'
-    qw.write_queue_xml(filename=filename)
-    files = [filename]
+    filezilla_queue_xml_filename = 'FileZilla_Download_Queue.xml'
+    qw.write_queue_xml(filename=filezilla_queue_xml_filename)
 
+    zip_file_filename = "CKANFileDownload.zip"
+    create_download_zipfile(zip_file_filename, filezilla_queue_xml_filename)
+
+    files = [zip_file_filename]
     try:
-        t.email_from_localhost(files=files)
+        # t.email_from_localhost(files=files)
         print 'sent'
     except Exception as e1:
         print(e1)
