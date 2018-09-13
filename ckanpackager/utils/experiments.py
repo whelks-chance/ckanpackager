@@ -14,7 +14,7 @@ from email.mime.text import MIMEText
 from ckanpackager.utils.QueueWriter import QueueWriter
 import local_settings
 
-ZIP_FILE_INCLUDE_FOLDER = 'include_in_zipfile'
+ZIP_FILE_INCLUDE_FOLDER = './ckanpackager/utils/include_in_zipfile'
 
 
 class Things:
