@@ -147,7 +147,7 @@ class Things:
 def create_download_zipfile(zip_file_filename, filezilla_queue_xml_filename):
 
     def add_file(zip_file, filename):
-        zip_file.write(os.path.join('include_in_zipfile', filename), filename)
+        zip_file.write(os.path.join(ZIP_FILE_INCLUDE_FOLDER, filename), filename)
 
     zip_file = zipfile.ZipFile(zip_file_filename, 'w', zipfile.ZIP_DEFLATED)
     add_file(zip_file, filezilla_queue_xml_filename)
