@@ -12,7 +12,8 @@ class UrlPackageTask(PackageTask):
         return {
             'resource_id': (True, None),
             'email': (True, None),
-            'resource_url': (True, None)
+            'resource_url': (True, None),
+            'download_payload': (True, None),
         }
 
     def host(self):

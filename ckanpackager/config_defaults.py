@@ -1,8 +1,8 @@
 DEBUG = False
 HOST = '127.0.0.1'
 PORT = 8765
-SECRET = '8ba6d280d4ce9a416e9b604f3f0ebb'
-STATS_DB = 'sqlite:////var/lib/ckanpackager/stats.db'
+SECRET = 'toadstools'
+STATS_DB = 'sqlite:///stats.db'
 CELERY_BROKER = 'redis://localhost:6379/0'
 PAGE_SIZE = 5000
 SLOW_REQUEST = 50000

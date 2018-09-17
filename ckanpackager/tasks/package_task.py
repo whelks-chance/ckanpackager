@@ -1,4 +1,5 @@
 import os
+import json
 import smtplib
 import hashlib
 import logging
@@ -140,9 +141,18 @@ class PackageTask(object):
         t = Things()
         # t.post_stuff()
 
+        payload_string = self.request_params['download_payload']
+        payload = json.loads(payload_string)
+        print 'DOWNLOAD PACKAGE:'
+        print payload
         qw = QueueWriter()
-        for f in local_settings.files:
+        for f in payload['package']:
+            print f
             qw.add_file(f)
+
+        # qw = QueueWriter()
+        # for f in local_settings.files:
+        #     qw.add_file(f)
 
         filezilla_queue_xml_filename = 'FileZilla_Download_Queue.xml'
         qw.write_queue_xml(filename=os.path.join(ZIP_FILE_INCLUDE_FOLDER, filezilla_queue_xml_filename))
@@ -156,7 +166,7 @@ class PackageTask(object):
 
         files = [zip_file_filename]
         try:
-            t.email_from_localhost(files=files)
+            # t.email_from_localhost(files=files)
             self.log.info('sent')
         except Exception as e1:
             self.log.info(e1)
