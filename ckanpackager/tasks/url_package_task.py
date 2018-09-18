@@ -10,9 +10,9 @@ class UrlPackageTask(PackageTask):
     def schema(self):
         """Define the schema for datastore package tasks"""
         return {
-            'resource_id': (True, None),
+            # 'resource_id': (True, None),
             'email': (True, None),
-            'resource_url': (True, None),
+            # 'resource_url': (True, None),
         }
 
     def host(self):

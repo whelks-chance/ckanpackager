@@ -1,8 +1,10 @@
 DEBUG = False
 HOST = '127.0.0.1'
 PORT = 8765
-SECRET = 'toadstools'
+SECRET = '8ba6d280d4ce9a416e9b604f3f0ebb'
+# STATS_DB = 'sqlite:////var/lib/ckanpackager/stats.db'
 STATS_DB = 'sqlite:///stats.db'
+
 CELERY_BROKER = 'redis://localhost:6379/0'
 PAGE_SIZE = 5000
 SLOW_REQUEST = 50000
@@ -10,7 +12,7 @@ STORE_DIRECTORY = "/tmp/ckanpackager"
 TEMP_DIRECTORY = "/tmp"
 CACHE_TIME = 60*60*24
 ZIP_COMMAND = "/usr/bin/zip {output} {input}"
-SMTP_HOST = "localhost"
+SMTP_HOST = "127.0.0.1"
 SMTP_PORT = 25
 SUCCESS_MESSAGE = "The resource will be emailed to you shortly. This make take a little longer if our servers are busy, so please be patient!"
 EMAIL_SUBJECT = "Resource from {ckan_host}"

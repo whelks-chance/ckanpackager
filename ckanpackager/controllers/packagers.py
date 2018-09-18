@@ -33,12 +33,19 @@ packagers = Blueprint('packager', __name__)
 
 @packagers.route('/package_url', methods=['POST'])
 def package_url():
+
+    print('\n\n\nPackager called:  ')
+    print(request.__dict__)
+
     logic.authorize_request(request.form)
+    print('authorized complete')
+
     task = UrlPackageTask(request.form, current_app.config)
-    print(request.form)
-    print(current_app.config)
-    print('download_payload:', request.form['download_payload'])
+    print('task created')
+
     add_task(task.speed(), 'package_url', request.form)
+    print('task added')
+
     return jsonify(
         status='success',
         message=current_app.config['SUCCESS_MESSAGE']

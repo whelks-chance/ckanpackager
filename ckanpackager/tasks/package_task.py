@@ -40,6 +40,9 @@ class PackageTask(object):
         self.download_payload = params.get('download_payload', None)
         if not self.download_payload:
             print('The file download payload was not received')
+        else:
+            print ('Celery task got download payload :')
+            print(self.download_payload)
         self.sentry = Client(self.config.get('SENTRY_DSN'))
         self.time = str(datetime.now())
         self.request_params = {}
@@ -47,8 +50,8 @@ class PackageTask(object):
         schema = self.schema()
         if 'email' not in schema:
             schema['email'] = (True, None)
-        if 'resource_id' not in schema:
-            schema['resource_id'] = (True, None)
+        # if 'resource_id' not in schema:
+        #     schema['resource_id'] = (True, None)
         for field, definition in schema.items():
             if definition[0] and field not in params:
                 raise BadRequestError("Parameter {} is required".format(field))
@@ -92,23 +95,58 @@ class PackageTask(object):
             else:
                 self.log = logging.getLogger(__name__)
             self._run()
-            statistics(self.config['STATS_DB']).log_request(
-                self.request_params['resource_id'],
-                self.request_params['email'],
-                self.request_params.get('limit', None)
-            )
+            # statistics(self.config['STATS_DB']).log_request(
+            #     # self.request_params['resource_id'],
+            #     self.request_params['email'],
+            #     self.download_payload
+            #     # self.request_params.get('limit', None)
+            # )
         except Exception as e:
-            statistics(self.config['STATS_DB']).log_error(
-                self.request_params['resource_id'],
-                self.request_params['email'],
-                traceback.format_exc()
-            )
+            # statistics(self.config['STATS_DB']).log_error(
+            #     # self.request_params['resource_id'],
+            #     '',
+            #     self.request_params['email'],
+            #     traceback.format_exc()
+            # )
             self.sentry.captureException()
             raise e
 
     def _run(self):
         """Run the task"""
         self.log.info("Task parameters: {}".format(str(self.request_params)))
+        self.log.info("Task download payload: {}".format(str(self.download_payload)))
+
+        # # Get/create the file
+        # resource = ResourceFile(
+        #     self.request_params,
+        #     self.config['STORE_DIRECTORY'],
+        #     self.config['TEMP_DIRECTORY'],
+        #     self.config['CACHE_TIME']
+        # )
+        # if not resource.zip_file_exists():
+        #     self.create_zip(resource)
+        # else:
+        #     self.log.info("Found file in cache")
+        # zip_file_name = resource.get_zip_file_name()
+        # self.log.info("Got ZIP file {}. Emailing link.".format(zip_file_name))
+        # # Email the link
+        # place_holders = {
+        #     'resource_id': self.request_params['resource_id'],
+        #     'zip_file_name': os.path.basename(zip_file_name),
+        #     'ckan_host': self.host()
+        # }
+        # from_addr = self.config['EMAIL_FROM'].format(**place_holders)
+        # msg = MIMEText(self.config['EMAIL_BODY'].format(**place_holders))
+        # msg['Subject'] = self.config['EMAIL_SUBJECT'].format(**place_holders)
+        # msg['From'] = from_addr
+        # msg['To'] = self.request_params['email']
+        # server = smtplib.SMTP(self.config['SMTP_HOST'], self.config['SMTP_PORT'])
+        # try:
+        #     if 'SMTP_LOGIN' in self.config:
+        #         server.login(self.config['SMTP_LOGIN'], self.config['SMTP_PASSWORD'])
+        #     server.sendmail(from_addr, self.request_params['email'], msg.as_string())https://plus.google.com/+RipRowan/posts/eVeouesvaVX
+        # finally:
+        #     server.quit()
 
         t = Things()
         # t.post_stuff()
