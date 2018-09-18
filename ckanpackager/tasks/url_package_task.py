@@ -13,7 +13,6 @@ class UrlPackageTask(PackageTask):
             'resource_id': (True, None),
             'email': (True, None),
             'resource_url': (True, None),
-            'download_payload': (True, None),
         }
 
     def host(self):

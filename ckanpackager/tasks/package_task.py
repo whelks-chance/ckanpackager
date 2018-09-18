@@ -37,6 +37,9 @@ class PackageTask(object):
     """
     def __init__(self, params, config):
         self.config = config
+        self.download_payload = params.get('download_payload', None)
+        if not self.download_payload:
+            print('The file download payload was not received')
         self.sentry = Client(self.config.get('SENTRY_DSN'))
         self.time = str(datetime.now())
         self.request_params = {}
@@ -106,53 +109,20 @@ class PackageTask(object):
     def _run(self):
         """Run the task"""
         self.log.info("Task parameters: {}".format(str(self.request_params)))
-        # # Get/create the file
-        # resource = ResourceFile(
-        #     self.request_params,
-        #     self.config['STORE_DIRECTORY'],
-        #     self.config['TEMP_DIRECTORY'],
-        #     self.config['CACHE_TIME']
-        # )
-        # if not resource.zip_file_exists():
-        #     self.create_zip(resource)
-        # else:
-        #     self.log.info("Found file in cache")
-        # zip_file_name = resource.get_zip_file_name()
-        # self.log.info("Got ZIP file {}. Emailing link.".format(zip_file_name))
-        # # Email the link
-        # place_holders = {
-        #     'resource_id': self.request_params['resource_id'],
-        #     'zip_file_name': os.path.basename(zip_file_name),
-        #     'ckan_host': self.host()
-        # }
-        # from_addr = self.config['EMAIL_FROM'].format(**place_holders)
-        # msg = MIMEText(self.config['EMAIL_BODY'].format(**place_holders))
-        # msg['Subject'] = self.config['EMAIL_SUBJECT'].format(**place_holders)
-        # msg['From'] = from_addr
-        # msg['To'] = self.request_params['email']
-        # server = smtplib.SMTP(self.config['SMTP_HOST'], self.config['SMTP_PORT'])
-        # try:
-        #     if 'SMTP_LOGIN' in self.config:
-        #         server.login(self.config['SMTP_LOGIN'], self.config['SMTP_PASSWORD'])
-        #     server.sendmail(from_addr, self.request_params['email'], msg.as_string())
-        # finally:
-        #     server.quit()
 
         t = Things()
         # t.post_stuff()
 
-        payload_string = self.request_params['download_payload']
+        payload_string = self.download_payload
         payload = json.loads(payload_string)
-        print 'DOWNLOAD PACKAGE:'
+        print 'DOWLOAD PAYLOAD:'
         print payload
+        file_list = self.create_file_list_from_download_payload(payload)
+        print 'FILE LIST:'
         qw = QueueWriter()
-        for f in payload['package']:
+        for f in file_list:
             print f
             qw.add_file(f)
-
-        # qw = QueueWriter()
-        # for f in local_settings.files:
-        #     qw.add_file(f)
 
         filezilla_queue_xml_filename = 'FileZilla_Download_Queue.xml'
         qw.write_queue_xml(filename=os.path.join(ZIP_FILE_INCLUDE_FOLDER, filezilla_queue_xml_filename))
@@ -170,6 +140,14 @@ class PackageTask(object):
             self.log.info('sent')
         except Exception as e1:
             self.log.info(e1)
+
+    def create_file_list_from_download_payload(self, download_payload):
+        # TODO: Return a list of files created from the package and resource information in the download payload
+        return [
+            '/tmp/test-package/file1.txt',
+            '/tmp/test-package/file2.txt',
+            '/tmp/test-package/file3.txt',
+        ]
 
     def __str__(self):
         """Return a unique representation of this task"""
