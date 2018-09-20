@@ -67,17 +67,19 @@ class QueueWriter:
                  remote_path_magic_enums=None, download_num=1, data_type_enum=1):
 
         if remote_file is None:
-            remote_file = os.path.basename(local_file)
+            remote_file = os.path.basename(local_file['file_path'])
         if remote_path_magic_enums is None:
-            remote_path_magic_enums = self.get_magic_enums(local_file)
+            remote_path_magic_enums = self.get_magic_enums(local_file['file_path'])
 
         self.queue_data['files'].append(
             {
-                'LocalFile': local_settings.win_dir + os.path.basename(local_file),
+                # 'LocalFile': local_settings.win_dir + os.path.basename(local_file['file_path']),
+                'LocalFile': local_settings.win_dir + local_file['name'],
                 'RemoteFile': remote_file,
                 'RemotePath': remote_path_magic_enums,
                 'Download': download_num,
-                'Size': os.path.getsize(local_file),
+                # 'Size': os.path.getsize(local_file),
+                'Size': local_file['size'],
                 'DataType': data_type_enum
             }
         )

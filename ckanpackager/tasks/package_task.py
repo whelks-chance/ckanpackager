@@ -1,11 +1,15 @@
 import os
 import json
+import pprint
 import smtplib
 import hashlib
 import logging
 import traceback
 from datetime import datetime
 from email.mime.text import MIMEText
+
+import requests
+
 from ckanpackager.lib.utils import BadRequestError
 from ckanpackager.lib.resource_file import ResourceFile
 from ckanpackager.lib.statistics import statistics
@@ -36,13 +40,26 @@ class PackageTask(object):
                task. If not implemented, this always returns 'slow'.
     """
     def __init__(self, params, config):
+        print(pprint.pformat(params, indent=4))
+
         self.config = config
         self.download_payload = params.get('download_payload', None)
+        self.file_paths = params.get('file_paths', None)
+
         if not self.download_payload:
             print('The file download payload was not received')
         else:
+            self.download_payload = json.loads(self.download_payload)
             print ('Celery task got download payload :')
             print(self.download_payload)
+
+        if not self.file_paths:
+            print('The file paths were not received')
+        else:
+            print ('Celery task got file paths :')
+            self.file_paths = json.loads(self.file_paths)
+            print(self.file_paths)
+
         self.sentry = Client(self.config.get('SENTRY_DSN'))
         self.time = str(datetime.now())
         self.request_params = {}
@@ -144,21 +161,20 @@ class PackageTask(object):
         # try:
         #     if 'SMTP_LOGIN' in self.config:
         #         server.login(self.config['SMTP_LOGIN'], self.config['SMTP_PASSWORD'])
-        #     server.sendmail(from_addr, self.request_params['email'], msg.as_string())https://plus.google.com/+RipRowan/posts/eVeouesvaVX
+        #     server.sendmail(from_addr, self.request_params['email'], msg.as_string())
         # finally:
         #     server.quit()
 
         t = Things()
         # t.post_stuff()
 
-        payload_string = self.download_payload
-        payload = json.loads(payload_string)
-        print 'DOWLOAD PAYLOAD:'
-        print payload
-        file_list = self.create_file_list_from_download_payload(payload)
-        print 'FILE LIST:'
+
+        # print 'DOWLOAD PAYLOAD:'
+        # print self.payload
+        # file_list = self.create_file_list_from_download_payload(self.payload)
+        # print 'FILE LIST:'
         qw = QueueWriter()
-        for f in file_list:
+        for f in self.file_paths['paths']:
             print f
             qw.add_file(f)
 
@@ -174,18 +190,33 @@ class PackageTask(object):
 
         files = [zip_file_filename]
         try:
-            # t.email_from_localhost(files=files)
+            t.email_from_localhost(files=files)
             self.log.info('sent')
         except Exception as e1:
             self.log.info(e1)
 
     def create_file_list_from_download_payload(self, download_payload):
         # TODO: Return a list of files created from the package and resource information in the download payload
-        return [
-            '/tmp/test-package/file1.txt',
-            '/tmp/test-package/file2.txt',
-            '/tmp/test-package/file3.txt',
-        ]
+
+        resource_data = {}
+        resource_urls = []
+
+        for res_id in download_payload['download_list']:
+            if res_id:
+
+                response = requests.get(
+                    'http://localhost:5000/api/3/action/resource_show',
+                    params={'id': res_id}
+                )
+
+                res_json = response.json()
+                print(res_json)
+
+                # TODO use 'url' instead of name
+                resource_data[res_id] = res_json['result']['name']
+                resource_urls.append(res_json['result']['name'])
+
+        return resource_urls
 
     def __str__(self):
         """Return a unique representation of this task"""
