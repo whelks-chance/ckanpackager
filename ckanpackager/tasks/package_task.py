@@ -9,6 +9,7 @@ from datetime import datetime
 from email.mime.text import MIMEText
 
 import requests
+import sys
 
 from ckanpackager.lib.utils import BadRequestError
 from ckanpackager.lib.resource_file import ResourceFile
@@ -18,6 +19,7 @@ from raven import Client
 from ckanpackager.utils import local_settings
 from ckanpackager.utils.QueueWriter import QueueWriter
 from ckanpackager.utils.experiments import Things, ZIP_FILE_INCLUDE_FOLDER, create_download_zipfile
+from ckanpackager.utils.local_settings import filestore_root
 
 
 class PackageTask(object):
@@ -126,6 +128,12 @@ class PackageTask(object):
             #     traceback.format_exc()
             # )
             self.sentry.captureException()
+
+            self.log.error(e)
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            self.log.error('exc_type: {}, fname: {}, tb_lineno: {}'.format(exc_type, fname, exc_tb.tb_lineno))
+
             raise e
 
     def _run(self):
@@ -175,8 +183,24 @@ class PackageTask(object):
         # print 'FILE LIST:'
         qw = QueueWriter()
         for f in self.file_paths['paths']:
-            print f
-            qw.add_file(f)
+            # print f
+
+            self.log.info("File to save: {}".format(f))
+
+            if '.ds.json' in f['name']:
+                with open(f['file_path'], 'r') as ds1:
+                    json_blob = json.load(ds1)
+                    file_list = t.blob_to_list(json_blob, '')
+
+                    # print(file_list)
+                    self.log.info("File list to email: {}".format(file_list))
+
+                    for ds_file in file_list:
+                        self.log.info("adding: {}".format(ds_file))
+                        ds_file['file_path'] = os.path.join(filestore_root, ds_file['file_path'])
+                        qw.add_file(ds_file)
+            else:
+                qw.add_file(f)
 
         filezilla_queue_xml_filename = 'FileZilla_Download_Queue.xml'
         qw.write_queue_xml(filename=os.path.join(ZIP_FILE_INCLUDE_FOLDER, filezilla_queue_xml_filename))

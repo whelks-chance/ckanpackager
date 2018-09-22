@@ -11,6 +11,8 @@ import requests
 
 from email.mime.text import MIMEText
 
+import sys
+
 from ckanpackager.utils.QueueWriter import QueueWriter
 import local_settings
 
@@ -142,6 +144,43 @@ class Things:
         print res
 
         smtp.quit()
+
+    def blob_to_list(self, json_blob, root):
+        file_list = []
+        # self.log.info('log this')
+
+        # self.log.info('blob type {}'.format(type(json_blob)))
+        # self.log.info('blob {}'.format(json_blob))
+        # if json_blob:
+        #     self.log.info('blob keys {}'.format(json_blob.keys()))
+
+        try:
+            if json_blob['type'] == 'directory':
+                sub_root = json_blob['name']
+                for item in json_blob['children']:
+                    deeper_list = self.blob_to_list(item, os.path.join(root, sub_root))
+
+                    # self.log.info('deeper_list {}'.format(file_list))
+
+                    file_list.extend(deeper_list)
+                    # self.log.info('file_list after dir {}'.format(file_list))
+
+            elif json_blob['type'] == 'file':
+                self.log.info('#### {}'.format(os.path.join(root, json_blob['name'])))
+                file_list.append({
+                    'name': json_blob['name'],
+                    'file_path': os.path.join(root, json_blob['name']),
+                    'size': json_blob['size']
+                })
+                # file_list.append(os.path.join(root, json_blob['name']))
+                # self.log.info('file_list after file {}'.format(file_list))
+
+            return file_list
+        except Exception as e2:
+            self.log.error(e2)
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            self.log.error(exc_type, fname, exc_tb.tb_lineno)
 
 
 def create_download_zipfile(zip_file_filename, filezilla_queue_xml_filename):

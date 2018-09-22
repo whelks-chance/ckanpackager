@@ -1,3 +1,4 @@
+import logging
 import os
 from lxml import etree as ET
 
@@ -21,6 +22,8 @@ class ServerType:
 
 class QueueWriter:
     def __init__(self):
+        self.log = logging.getLogger(__name__)
+
         # Files descriptions have shape like...
         # {
         #     'LocalFile': '/home/ianh/filezilla_dls/java_error_in_PYCHARM.hprof',
@@ -74,7 +77,7 @@ class QueueWriter:
         self.queue_data['files'].append(
             {
                 # 'LocalFile': local_settings.win_dir + os.path.basename(local_file['file_path']),
-                'LocalFile': local_settings.win_dir + local_file['name'],
+                'LocalFile': local_settings.win_dir + local_file['file_path'].replace('/', '\\'),
                 'RemoteFile': remote_file,
                 'RemotePath': remote_path_magic_enums,
                 'Download': download_num,
@@ -86,6 +89,9 @@ class QueueWriter:
 
     # This file is imported/exported from FileZilla
     def write_queue_xml(self, filename="filename.xml"):
+
+        self.log.info("File write_queue_xml queue_data: {}".format(self.queue_data))
+
         root = ET.Element("FileZilla3", version="3.15.0.2", platform="*nix")
         queue = ET.SubElement(root, "Queue")
         server = ET.SubElement(queue, "Server")
