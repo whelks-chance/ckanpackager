@@ -182,6 +182,8 @@ class PackageTask(object):
         # file_list = self.create_file_list_from_download_payload(self.payload)
         # print 'FILE LIST:'
         qw = QueueWriter()
+        qw.generate_remote_credentials()
+
         for f in self.file_paths['paths']:
             # print f
 
@@ -207,7 +209,7 @@ class PackageTask(object):
 
         password_filename = os.path.join(ZIP_FILE_INCLUDE_FOLDER, 'PASSWORD.txt')
         with open(password_filename, 'w') as f:
-            f.write(local_settings.password)
+            f.write(qw.password)
 
         zip_file_filename = "CKANFileDownload.zip"
         create_download_zipfile(zip_file_filename, filezilla_queue_xml_filename)
@@ -215,7 +217,7 @@ class PackageTask(object):
         files = [zip_file_filename]
         try:
             t.email_from_localhost(files=files)
-            self.log.info('sent')
+            self.log.info('using logger to say : email sent')
         except Exception as e1:
             self.log.info(e1)
 

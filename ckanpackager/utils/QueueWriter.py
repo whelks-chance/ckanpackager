@@ -1,5 +1,7 @@
 import logging
 import os
+
+import requests
 from lxml import etree as ET
 
 import local_settings
@@ -49,6 +51,7 @@ class QueueWriter:
             'Name': 'New site',
             'files': []
         }
+        self.password = 'WRONG_PASSWORD'
 
     # Weird magic string, encoded something like:
     # <RemotePath>1 0 4 home 4 ianh 13 filezilla_dls</RemotePath>
@@ -109,6 +112,19 @@ class QueueWriter:
         tree = ET.ElementTree(root)
         print(tree)
         tree.write(filename, pretty_print=True, encoding='utf-8', xml_declaration=True)
+
+    def generate_remote_credentials(self):
+        response = requests.get('http://localhost:8000/generate_new_user')
+        print(response)
+
+        res_json = response.json()
+        print(res_json)
+
+        if len(res_json['errors']):
+            print('has errors')
+        self.queue_data['User'] = res_json['username']
+        self.password = res_json['password']
+        return res_json
 
 
 if __name__ == '__main__':
