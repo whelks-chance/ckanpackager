@@ -114,10 +114,19 @@ class QueueWriter:
         tree.write(filename, pretty_print=True, encoding='utf-8', xml_declaration=True)
 
     def generate_remote_credentials(self):
-        response = requests.get('http://localhost:8000/generate_new_user')
-        print(response)
+        try:
+            response = requests.get('http://localhost:8000/generate_new_user')
+            print(response)
+            res_json = response.json()
 
-        res_json = response.json()
+        except Exception as e:
+            print e
+            res_json = {
+                'username': 'BrokenUsername',
+                'password': 'BrokenPassword',
+                'errors': ['Error contacting UserControl server']
+            }
+
         print(res_json)
 
         if len(res_json['errors']):

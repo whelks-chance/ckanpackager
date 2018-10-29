@@ -11,6 +11,7 @@ from email.mime.text import MIMEText
 import requests
 import sys
 
+from ckanpackager.lib.ckan_dataset import CKANdataset
 from ckanpackager.lib.utils import BadRequestError
 from ckanpackager.lib.resource_file import ResourceFile
 from ckanpackager.lib.statistics import statistics
@@ -137,89 +138,135 @@ class PackageTask(object):
             raise e
 
     def _run(self):
-        """Run the task"""
-        self.log.info("Task parameters: {}".format(str(self.request_params)))
-        self.log.info("Task download payload: {}".format(str(self.download_payload)))
-
-        # # Get/create the file
-        # resource = ResourceFile(
-        #     self.request_params,
-        #     self.config['STORE_DIRECTORY'],
-        #     self.config['TEMP_DIRECTORY'],
-        #     self.config['CACHE_TIME']
-        # )
-        # if not resource.zip_file_exists():
-        #     self.create_zip(resource)
-        # else:
-        #     self.log.info("Found file in cache")
-        # zip_file_name = resource.get_zip_file_name()
-        # self.log.info("Got ZIP file {}. Emailing link.".format(zip_file_name))
-        # # Email the link
-        # place_holders = {
-        #     'resource_id': self.request_params['resource_id'],
-        #     'zip_file_name': os.path.basename(zip_file_name),
-        #     'ckan_host': self.host()
-        # }
-        # from_addr = self.config['EMAIL_FROM'].format(**place_holders)
-        # msg = MIMEText(self.config['EMAIL_BODY'].format(**place_holders))
-        # msg['Subject'] = self.config['EMAIL_SUBJECT'].format(**place_holders)
-        # msg['From'] = from_addr
-        # msg['To'] = self.request_params['email']
-        # server = smtplib.SMTP(self.config['SMTP_HOST'], self.config['SMTP_PORT'])
-        # try:
-        #     if 'SMTP_LOGIN' in self.config:
-        #         server.login(self.config['SMTP_LOGIN'], self.config['SMTP_PASSWORD'])
-        #     server.sendmail(from_addr, self.request_params['email'], msg.as_string())
-        # finally:
-        #     server.quit()
-
-        t = Things()
-        # t.post_stuff()
-
-
-        # print 'DOWLOAD PAYLOAD:'
-        # print self.payload
-        # file_list = self.create_file_list_from_download_payload(self.payload)
-        # print 'FILE LIST:'
-        qw = QueueWriter()
-        qw.generate_remote_credentials()
-
-        for f in self.file_paths['paths']:
-            # print f
-
-            self.log.info("File to save: {}".format(f))
-
-            if '.ds.json' in f['name']:
-                with open(f['file_path'], 'r') as ds1:
-                    json_blob = json.load(ds1)
-                    file_list = t.blob_to_list(json_blob, '')
-
-                    # print(file_list)
-                    self.log.info("File list to email: {}".format(file_list))
-
-                    for ds_file in file_list:
-                        self.log.info("adding: {}".format(ds_file))
-                        ds_file['file_path'] = os.path.join(filestore_root, ds_file['file_path'])
-                        qw.add_file(ds_file)
-            else:
-                qw.add_file(f)
-
-        filezilla_queue_xml_filename = 'FileZilla_Download_Queue.xml'
-        qw.write_queue_xml(filename=os.path.join(ZIP_FILE_INCLUDE_FOLDER, filezilla_queue_xml_filename))
-
-        password_filename = os.path.join(ZIP_FILE_INCLUDE_FOLDER, 'PASSWORD.txt')
-        with open(password_filename, 'w') as f:
-            f.write(qw.password)
-
-        zip_file_filename = "CKANFileDownload.zip"
-        create_download_zipfile(zip_file_filename, filezilla_queue_xml_filename)
-
-        files = [zip_file_filename]
         try:
-            t.email_from_localhost(files=files)
-            self.log.info('using logger to say : email sent')
-        except Exception as e1:
-            self.log.info(e1)
+            """Run the task"""
+            self.log.info("Task parameters: {}".format(str(self.request_params)))
+            self.log.info("Task download payload: {}".format(str(self.download_payload)))
+
+            resource_ids = self.download_payload['download_list']
+            package_ids = self.download_payload['download_package_list']
+
+            extra_resources_data = []
+            for package_id in package_ids:
+                ckan_dataset = CKANdataset(package_id)
+                try:
+                    extra_resources_data.append(
+                        ckan_dataset.fetch_resource_data()
+                    )
+                except:
+                    # TODO care about failed resource fetches
+                    pass
+
+            self.log.info("extra_resources_data len {} : {}".format(
+                len(extra_resources_data),
+                str(extra_resources_data))
+            )
+
+            # # Get/create the file
+            # resource = ResourceFile(
+            #     self.request_params,
+            #     self.config['STORE_DIRECTORY'],
+            #     self.config['TEMP_DIRECTORY'],
+            #     self.config['CACHE_TIME']
+            # )
+            # if not resource.zip_file_exists():
+            #     self.create_zip(resource)
+            # else:
+            #     self.log.info("Found file in cache")
+            # zip_file_name = resource.get_zip_file_name()
+            # self.log.info("Got ZIP file {}. Emailing link.".format(zip_file_name))
+            # # Email the link
+            # place_holders = {
+            #     'resource_id': self.request_params['resource_id'],
+            #     'zip_file_name': os.path.basename(zip_file_name),
+            #     'ckan_host': self.host()
+            # }
+            # from_addr = self.config['EMAIL_FROM'].format(**place_holders)
+            # msg = MIMEText(self.config['EMAIL_BODY'].format(**place_holders))
+            # msg['Subject'] = self.config['EMAIL_SUBJECT'].format(**place_holders)
+            # msg['From'] = from_addr
+            # msg['To'] = self.request_params['email']
+            # server = smtplib.SMTP(self.config['SMTP_HOST'], self.config['SMTP_PORT'])
+            # try:
+            #     if 'SMTP_LOGIN' in self.config:
+            #         server.login(self.config['SMTP_LOGIN'], self.config['SMTP_PASSWORD'])
+            #     server.sendmail(from_addr, self.request_params['email'], msg.as_string())
+            # finally:
+            #     server.quit()
+
+            t = Things()
+            # t.post_stuff()
+
+
+            # print 'DOWLOAD PAYLOAD:'
+            # print self.payload
+            # file_list = self.create_file_list_from_download_payload(self.payload)
+            # print 'FILE LIST:'
+            qw = QueueWriter()
+            qw.generate_remote_credentials()
+
+            for dataset in extra_resources_data:
+                self.log.info("dataset len and type: {}".format(len(dataset), type(dataset)))
+
+                for resource in dataset:
+                    self.log.info("resource len and type: {}".format(len(resource), type(resource)))
+
+                    # TODO what do we do if there isn't a file path stored?
+                    if 'filepath' in resource:
+                        self.log.info("resource filepath: {}".format(resource['filepath']))
+
+                        qw.add_file(
+                            {
+                                'file_path': resource['filepath'],
+                                'name': resource['name'],
+                                'size': resource['size']
+                            }
+                        )
+
+            # TODO this probably isn't needed, it's from before we used the API in the packager celery task
+            # for f in self.file_paths['paths']:
+            #     self.log.info("File to save: {}".format(f))
+            #
+            #     if '.ds.json' in f['name']:
+            #         with open(f['file_path'], 'r') as ds1:
+            #             json_blob = json.load(ds1)
+            #             file_list = t.blob_to_list(json_blob, '')
+            #
+            #             # print(file_list)
+            #             self.log.info("File list to email: {}".format(file_list))
+            #
+            #             for ds_file in file_list:
+            #                 self.log.info("adding: {}".format(ds_file))
+            #                 ds_file['file_path'] = os.path.join(filestore_root, ds_file['file_path'])
+            #                 qw.add_file(ds_file)
+            #     else:
+            #         qw.add_file(f)
+
+            filezilla_queue_xml_filename = 'FileZilla_Download_Queue.xml'
+            qw.write_queue_xml(filename=os.path.join(ZIP_FILE_INCLUDE_FOLDER, filezilla_queue_xml_filename))
+
+            password_filename = os.path.join(ZIP_FILE_INCLUDE_FOLDER, 'PASSWORD.txt')
+            with open(password_filename, 'w') as f:
+                f.write(qw.password)
+
+            zip_file_filename = "CKANFileDownload.zip"
+            create_download_zipfile(zip_file_filename, filezilla_queue_xml_filename)
+
+            files = [zip_file_filename]
+            try:
+                t.email_from_localhost(files=files)
+                self.log.info('using logger to say : email sent')
+            except Exception as e1:
+                self.log.info(e1)
+                raise e1
+
+        except Exception as e3:
+            self.log.error(e3)
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            self.log.error('exc_type: {}, fname: {}, tb_lineno: {}'.format(exc_type, fname, exc_tb.tb_lineno))
+
+            raise e3
 
     def create_file_list_from_download_payload(self, download_payload):
         # TODO: Return a list of files created from the package and resource information in the download payload
