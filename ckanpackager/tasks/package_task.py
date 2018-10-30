@@ -217,10 +217,11 @@ class PackageTask(object):
 
                         qw.add_file(
                             {
-                                'file_path': resource['filepath'],
+                                'file_path': resource['resource_filepath'],
                                 'name': resource['name'],
                                 'size': resource['size']
-                            }
+                            },
+                            remote_file=resource['filepath']
                         )
 
             # TODO this probably isn't needed, it's from before we used the API in the packager celery task
