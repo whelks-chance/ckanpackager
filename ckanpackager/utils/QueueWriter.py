@@ -71,17 +71,27 @@ class QueueWriter:
     # Adding a file to the email
     def add_file(self, local_file, remote_file=None,
                  remote_path_magic_enums=None, download_num=1, data_type_enum=1):
-
+        """
+        :param local_file: The location the file will be saved to on the users machine
+        :param remote_file: The full abs path to the file on the remote server
+        :param remote_path_magic_enums: general weirdness, use get_magic_enums() instead of figuring it out
+        :param download_num: denotes it's a download, not an upload
+        :param data_type_enum:
+        """
         if remote_file is None:
-            remote_file = os.path.basename(local_file['file_path'])
-        if remote_path_magic_enums is None:
-            remote_path_magic_enums = self.get_magic_enums(local_file['file_path'])
+            remote_file_basename = os.path.basename(local_file['file_path'])
+            if remote_path_magic_enums is None:
+                remote_path_magic_enums = self.get_magic_enums(local_file['file_path'])
+        else:
+            remote_file_basename = os.path.basename(remote_file)
+            if remote_path_magic_enums is None:
+                remote_path_magic_enums = self.get_magic_enums(remote_file)
 
         self.queue_data['files'].append(
             {
                 # 'LocalFile': local_settings.win_dir + os.path.basename(local_file['file_path']),
-                'LocalFile': local_settings.win_dir + local_file['file_path'].replace('/', '\\'),
-                'RemoteFile': remote_file,
+                'LocalFile': local_settings.find_replace_string + local_file['file_path'],
+                'RemoteFile': remote_file_basename,
                 'RemotePath': remote_path_magic_enums,
                 'Download': download_num,
                 # 'Size': os.path.getsize(local_file),

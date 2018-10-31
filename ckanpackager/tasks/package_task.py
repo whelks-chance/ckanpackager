@@ -137,6 +137,20 @@ class PackageTask(object):
 
             raise e
 
+    # https://stackoverflow.com/a/32107484/2943238
+    def paths(self, tree):
+        if 'children' not in tree:
+            # print '\n\nSingle file for {} size {}'.format(tree['name'], tree['size'])
+            yield [
+                [tree['full_path'],
+                 tree['name'],
+                 tree['size']], ]
+        else:
+            # print '\n\nChilden for dir {}'.format(tree['name'])
+            for child in tree['children']:
+                for descendant in self.paths(child):
+                    yield [tree['name'], ] + descendant
+
     def _run(self):
         try:
             """Run the task"""
@@ -211,18 +225,43 @@ class PackageTask(object):
                 for resource in dataset:
                     self.log.info("resource len and type: {}".format(len(resource), type(resource)))
 
-                    # TODO what do we do if there isn't a file path stored?
-                    if 'filepath' in resource:
-                        self.log.info("resource filepath: {}".format(resource['filepath']))
+                    if 'type' in resource:
+                        if resource['type'] == 'BidsResource':
 
-                        qw.add_file(
-                            {
-                                'file_path': resource['resource_filepath'],
-                                'name': resource['name'],
-                                'size': resource['size']
-                            },
-                            remote_file=resource['filepath']
-                        )
+                            if 'url' in resource:
+                                url = resource['url']
+                                response = requests.get(url)
+                                dir_struc = response.json()
+                                resource_filelist = list(self.paths(dir_struc))
+                                for dataset_file in resource_filelist:
+                                    self.log.info("resource_filelist dataset_file: {}".format(
+                                        dataset_file))
+
+                                    middle_dirs = '/'.join(dataset_file[1:-1])
+
+                                    qw.add_file(
+                                        {
+                                            'file_path': resource['resource_filepath'] + '/' +
+                                                         middle_dirs + '/' +
+                                                         dataset_file[-1][1],
+                                            'name': dataset_file[-1][1],
+                                            'size': dataset_file[-1][2]
+                                        },
+                                        remote_file=dataset_file[-1][0]
+                                    )
+
+                    else:
+                        # TODO what do we do if there isn't a file path stored?
+                        if 'filepath' in resource:
+                            # self.log.info("resource filepath: {}".format(resource['filepath']))
+                            qw.add_file(
+                                {
+                                    'file_path': resource['resource_filepath'],
+                                    'name': resource['name'],
+                                    'size': resource['size']
+                                },
+                                remote_file=resource['filepath']
+                            )
 
             # TODO this probably isn't needed, it's from before we used the API in the packager celery task
             # for f in self.file_paths['paths']:

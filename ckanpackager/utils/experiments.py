@@ -1,4 +1,6 @@
+import json
 import os
+import pprint
 import smtplib
 import logging
 import zipfile
@@ -199,27 +201,49 @@ def create_download_zipfile(zip_file_filename, filezilla_queue_xml_filename):
     zip_file.close()
 
 
+# https://stackoverflow.com/a/32107484/2943238
+def paths(tree):
+    if 'children' not in tree:
+        # print '\n\nSingle file for {} size {}'.format(tree['name'], tree['size'])
+        yield [
+            [tree['full_path'],
+             tree['name'],
+             tree['size']], ]
+    else:
+        # print '\n\nChilden for dir {}'.format(tree['name'])
+
+        for child in tree['children']:
+            for descendant in paths(child):
+                yield [tree['name'], ] + descendant
+
+
 if __name__ == '__main__':
-    t = Things()
-    # t.post_stuff()
+    # t = Things()
+    # # t.post_stuff()
+    #
+    # qw = QueueWriter()
+    # for f in local_settings.files:
+    #     qw.add_file(f)
+    #
+    # filezilla_queue_xml_filename = 'FileZilla_Download_Queue.xml'
+    # qw.write_queue_xml(filename=os.path.join(ZIP_FILE_INCLUDE_FOLDER, filezilla_queue_xml_filename))
+    #
+    # password_filename = os.path.join(ZIP_FILE_INCLUDE_FOLDER, 'PASSWORD.txt')
+    # with open(password_filename, 'w') as f:
+    #     f.write(local_settings.password)
+    #
+    # zip_file_filename = "CKANFileDownload.zip"
+    # create_download_zipfile(zip_file_filename, filezilla_queue_xml_filename)
+    #
+    # files = [zip_file_filename]
+    # try:
+    #     t.email_from_localhost(files=files)
+    #     print 'sent'
+    # except Exception as e1:
+    #     print(e1)
 
-    qw = QueueWriter()
-    for f in local_settings.files:
-        qw.add_file(f)
+    with open('/home/ianh/PycharmProjects/lorenzo/json/sub-cdf001_task-resteyesopen_meg.ds.json', 'r') as f1:
+        stuff = json.load(f1)
 
-    filezilla_queue_xml_filename = 'FileZilla_Download_Queue.xml'
-    qw.write_queue_xml(filename=os.path.join(ZIP_FILE_INCLUDE_FOLDER, filezilla_queue_xml_filename))
+        pprint.pprint(list(paths(stuff)))
 
-    password_filename = os.path.join(ZIP_FILE_INCLUDE_FOLDER, 'PASSWORD.txt')
-    with open(password_filename, 'w') as f:
-        f.write(local_settings.password)
-
-    zip_file_filename = "CKANFileDownload.zip"
-    create_download_zipfile(zip_file_filename, filezilla_queue_xml_filename)
-
-    files = [zip_file_filename]
-    try:
-        t.email_from_localhost(files=files)
-        print 'sent'
-    except Exception as e1:
-        print(e1)
