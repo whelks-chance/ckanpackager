@@ -125,7 +125,7 @@ class QueueWriter:
 
     def generate_remote_credentials(self):
         try:
-            response = requests.get('http://localhost:8000/generate_new_user')
+            response = requests.get('{}/generate_new_user'.format(local_settings.host))
             print(response)
             res_json = response.json()
 

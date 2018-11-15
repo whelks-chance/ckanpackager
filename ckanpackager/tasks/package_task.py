@@ -237,13 +237,14 @@ class PackageTask(object):
                                     self.log.info("resource_filelist dataset_file: {}".format(
                                         dataset_file))
 
-                                    middle_dirs = '/'.join(dataset_file[1:-1])
+                                    file_path = '{}/'.format(resource['resource_filepath'])
+                                    if len(dataset_file) > 2:
+                                        file_path = '{}{}/'.format(file_path, '/'.join(dataset_file[1:-1]))
+                                    file_path = '{}{}'.format(file_path, dataset_file[-1][1])
 
                                     qw.add_file(
                                         {
-                                            'file_path': resource['resource_filepath'] + '/' +
-                                                         middle_dirs + '/' +
-                                                         dataset_file[-1][1],
+                                            'file_path': file_path,
                                             'name': dataset_file[-1][1],
                                             'size': dataset_file[-1][2]
                                         },
